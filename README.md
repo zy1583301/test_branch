@@ -1,14 +1,24 @@
-# test_branch
+# custom
 
-我新建了一个dev sdsdd
+## Project setup
+```
+npm install
+```
 
+### Compiles and hot-reloads for development
+```
+npm run serve
+```
 
+### Compiles and minifies for production
+```
+npm run build
+```
 
-这是新建的master
+### Lints and fixes files
+```
+npm run lint
+```
 
-我新建了一个dev new
-
-合并了
-
-
-new
+### Customize configuration
+See [Configuration Reference](https://cli.vuejs.org/config/).
