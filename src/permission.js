@@ -10,6 +10,12 @@ router.beforeEach((to,from,next)=>{
   } else {
     name = ""
   }
+  
   store.commit('changeCurrentPath', name)
+  // if(from.name == 'line') {
+  //   console.log('permissionline')
+  //   from.meta.keep = true
+  // }
   next()
+
 })

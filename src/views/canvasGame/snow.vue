@@ -99,7 +99,7 @@ export default {
     };
 },
     checkCollision(ball0, ball1) {
-    console.log(ball0, ball1)
+    // console.log(ball0, ball1)
     let dx = ball1.x - ball0.x,
         dy = ball1.y - ball0.y,
         dist = Math.sqrt(dx * dx + dy * dy);

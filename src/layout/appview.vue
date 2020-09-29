@@ -1,18 +1,22 @@
 <template>
   <div class="view">
-    <keep-alive include="line">
-    <router-view></router-view>
+    <keep-alive>
+        <router-view v-if="$route.meta.keepAlive"></router-view>
     </keep-alive>
-    <!-- <keep-alive> -->
-    <!-- <router-view v-if="$route.meta.keep"></router-view>
-</keep-alive>
-<router-view v-if="!$route.meta.keep"></router-view> -->
+    <router-view v-if="!$route.meta.keepAlive"></router-view>
   </div>
 </template>
 
 <script>
+  import {mapState} from 'vuex'
 export default {
-  
+  props:['isRouterAlive'],
+  computed:{
+    ...mapState(['include','flag'])
+  },
+  methods:{
+    
+  },
 }
 </script>
 
@@ -20,5 +24,6 @@ export default {
   .view {
     flex:1;
     height:100%;
+    overflow: auto;
   }
 </style>

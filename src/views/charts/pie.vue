@@ -7,7 +7,7 @@
 <script>
 // let data
 export default {
-  name: '饼状图',
+  name: 'pie',
   data() {
     return {
       dataA:null,
@@ -51,11 +51,12 @@ export default {
     }
   },
   created() {
+    console.log('pie重新构建')
     this.dataA = this.genData()
     this.option.legend.data = this.dataA.legendData
     this.option.legend.selected = this.dataA.selected
     this.option.series[0].data = this.dataA.seriesData
-    console.log(this.dataA.legendData,this.option.legend)
+    // console.log(this.dataA.legendData,this.option.legend)
   },
   mounted() {
     this.init()

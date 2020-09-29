@@ -1,13 +1,20 @@
 <template>
   <div>
+    <input type="text" v-model="data">
     <div id="line1" ref="line1" :style="{width: '600px', height: '600px'}"></div>
   </div>
 </template>
 <script>
+import {mapState} from 'vuex'
 export default {
-  name: 'line',
+  name: 'line1',
+  inject:['reload'],
+  computed:{
+    ...mapState(['flag'])
+  },
   data(){
     return {
+    data:'',
     option: {
     title: {
         text: '折线图堆叠'
@@ -73,21 +80,25 @@ export default {
     }
   },
   created() {
-   console.log(this.$route)
+    console.log('line重建')
   },
   mounted() {
-     this.init()
+    this.init()
+  },
+  beforeDestroy() {
   },
   activated(){
-      console.log('active')
   },
   deactivated(){
- console.log('deactive')
   },
   methods: {
    init() {
      var chart = this.$echarts.init(this.$refs.line1);
      chart.setOption(this.option)
+   },
+   reclear() {
+       console.log('sss')
+       this.reload()
    }
   },
 };
