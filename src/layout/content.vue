@@ -11,7 +11,7 @@
     <div class="tabs">
       <div v-for="(tab,index) in tabs" :key="tab.name">
         <span class="tab"   @click="go(tab)">{{tab.meta.title}}</span>
-        <span class="close"  @click="reduce(index)">关闭</span>
+        <span class="close"  @click="reduce(index,tab)">关闭</span>
       </div>
     </div>
     <div class="app_view">
@@ -22,6 +22,7 @@
 
 <script>
 import appView from './appview'
+
 import { mapMutations, mapState } from 'vuex'
 export default {
   data(){
@@ -73,7 +74,10 @@ export default {
         this.$message.warning('首页不能关闭');
         return 
       }
-      this.$route.meta.reload=true
+      // console.log(this,'this')
+      // this.$route.meta.reload=true
+      this.tabs[index].meta.reload=true
+      this.go(this.tabs[index])
       this.tabs.splice(index,1)
       let length = this.tabs.length
       if(this.tabs[length-1].name!==this.$route.name) {
@@ -105,6 +109,7 @@ export default {
       if(flag) {
         this.tabs.push(this.$route)
       }
+    // console.log(this.$vnode)
   }
 
 }

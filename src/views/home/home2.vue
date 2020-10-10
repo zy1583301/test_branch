@@ -2,7 +2,8 @@
     <div class="big">
 
 
-    
+        <button @click="send">发送机密文件</button>
+        <input v-model="formData.data" placeholder="请输入要加密的信息"/>
         <a-form :form="form">
           <a-form-item
             :label-col="formItemLayout.labelCol"
@@ -33,7 +34,9 @@
         </div>
     </template>
 <script>
-    import Table1 from './component/table'
+import Table1 from './component/table'
+import {nonce,aesEncrypt,createSecretKey,rsaEncrypt,rsaKeyEncrypt} from '@/utils/crypto'
+import {crypto} from '@/api/crypto'
 const formItemLayout = {
     labelCol: { span: 4 },
     wrapperCol: { span: 8 },
@@ -50,15 +53,32 @@ const formItemLayout = {
         formItemLayout,
         formTailLayout,
         form: this.$form.createForm(this, { name: 'dynamic_rule' }),
+        data:'',
+        formData:{
+          data:''
+        }
       };
     },
     components:{
         Table1
     },
     mounted() {
-        // document.body.style.position = 'relative'
+
     },
     methods: {
+      send() {
+        if(!this.formData.data) {
+          return
+        }
+        let data = JSON.stringify(this.formData)
+        let m = rsaEncrypt(data)
+        let key = createSecretKey(16)
+        console.log(key,'key')
+        let a = aesEncrypt(aesEncrypt(data,nonce),key)
+        crypto({text:a,key:rsaKeyEncrypt(key),m}).then(res=>{
+          console.log(res,'res')
+        })
+      },
       check() {
         this.form.validateFields(err => {
           if (!err) {

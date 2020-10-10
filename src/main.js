@@ -12,6 +12,7 @@ import echarts from 'echarts'
 import './assets/iconfont/iconfont.css'
 Vue.mixin({
   beforeRouteLeave:function(to, from, next){
+    // console.log(to, from,'to, from')
     // 确定是点击关闭按钮过来的   关闭的路由时可缓存的   
     if(from.meta.reload&&from.meta.keepAlive&&this.$vnode.componentOptions) {
       from.meta.reload = false

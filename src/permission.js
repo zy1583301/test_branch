@@ -2,6 +2,7 @@ import router from './router'
 import store from './store'
 // import {addRouter} from './utils/addRouter'
 router.beforeEach((to,from,next)=>{
+  console.log('this',this)
   document.title = to.meta.title
   // addRouter()
   let name

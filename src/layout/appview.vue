@@ -14,9 +14,17 @@ export default {
   computed:{
     ...mapState(['include','flag'])
   },
+  watch:{
+    // $route(n) {
+    //   console.log(n,'appviewwatch',this.$vnode)
+    // }
+  },
   methods:{
     
   },
+  created() {
+    // console.log(this.$vnode,'c')
+  }
 }
 </script>
 
