@@ -85,7 +85,8 @@ export function rsaEncrypt(message) {
     return jsrsasign.hex2b64(sig.sign());
 }
 
-// rsa加密  使用公钥加密 发到后端进行私钥解密
+// rsa加密  使用公钥加密 发到后端进行私钥解密 这个是对二层对称加密公钥的 非对称加密
+// 为了防止一层加密被破解
 export function rsaKeyEncrypt(msg) {
   const jsencrypt = new JSEncrypt()
   jsencrypt.setPublicKey(publicKey)

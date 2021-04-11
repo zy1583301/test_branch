@@ -225,9 +225,9 @@ checkWalls(ball) {
 }
 </script>
 <style lang="less" scoped>
-// #canvas{
-//   background-image: url(https://s2.ax1x.com/2019/05/25/VAY1nf.jpg);
-//   background-size: 800px;
-//   background-repeat: no-repeat;
-// }
+#canvas{
+  background-image: url('https://s2.ax1x.com/2019/05/25/VAY1nf.jpg');
+  background-size: 800px;
+  background-repeat: no-repeat;
+ }
 </style>

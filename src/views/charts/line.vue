@@ -1,6 +1,7 @@
 <template>
   <div>
     <input type="text" v-model="data">
+    <button @click="change">传递信息</button>
     <div id="line1" ref="line1" :style="{width: '600px', height: '600px'}"></div>
   </div>
 </template>
@@ -80,7 +81,29 @@ export default {
     }
   },
   created() {
-    console.log('line重建')
+    // es7 求幂运算符
+    // console.log('line重建',7**2)
+    // // es8 
+    // let obj = {
+    //   name:'月光',
+    //   age:18
+    // }
+    // let arr = [1,2,3]
+    // let a = Object.entries(obj)
+    // let b = Object.entries(arr)
+    // console.log(a,'aaa',b)
+    // var obj1 = {
+    //     id:  1,
+    //     name: '霖呆呆',
+    //     get gender() {
+    //         console.log('gender')
+    //     },
+    //     set grad(d) {
+    //         console.log(d)
+    //     }
+    // }
+    // console.log(Object.getOwnPropertyDescriptors(obj1))
+
   },
   mounted() {
     this.init()
@@ -92,14 +115,18 @@ export default {
   deactivated(){
   },
   methods: {
-   init() {
+    change() {
+      console.log('sss')
+      localStorage.setItem('a',Math.random()*1000)
+    },
+    init() {
      var chart = this.$echarts.init(this.$refs.line1);
      chart.setOption(this.option)
-   },
-   reclear() {
-       console.log('sss')
-       this.reload()
-   }
+    },
+    reclear() {
+        console.log('sss')
+        this.reload()
+    }
   },
 };
 </script>

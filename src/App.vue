@@ -1,20 +1,27 @@
+<!--
+ * @Descripttion: 
+ * @version: 1.0.0
+ * @Author: 鱼仙倌
+ * @Date: 2020-09-23 14:08:17
+ * @LastEditors: 鱼仙倌
+ * @LastEditTime: 2020-11-10 18:18:06
+-->
 <template>
   <div id="app">
-    <!-- <img alt="Vue logo" src="./assets/logo.png"> -->
-    <!-- <TreeSelect></TreeSelect> -->
     <router-view />
   </div>
 </template>
 
 <script>
-// // import HelloWorld from './components/HelloWorld.vue'
-// import TreeSelect from './views/tree_select'
-// import Select from './views/select'
+
 export default {
   name: 'App',
   components: {
-  //  TreeSelect,
-  //  Select
+  },
+  mounted() {
+    // 开启埋点
+    // this.$sensors.init();
+    // this.$sensors.quick(); //用于采集 $pageview 事件。
   }
 }
 </script>

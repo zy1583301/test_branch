@@ -84,13 +84,12 @@ if (typeof Object.assign != "function") {
   if (typeof window.define === "function" && window.define.amd) {
     window.define(definition);
   } else {
-    console.log('jsss',context)
     if (typeof module !== "undefined" && module.exports) {
       module.exports = definition();
     } else {
-      if (context && context.exports) {
+      if (context.exports) {
         context.exports = definition();
-      } else if(context) {
+      } else {
         context[name] = definition();
       }
     }
@@ -102,20 +101,21 @@ if (typeof Object.assign != "function") {
         return new BxH5DevicePrint(options);
       }
       var defaultOptions = {
-        swfContainerId: "fingerprintjs2",
+        swfContainerId: "BxH5DevicePrintjs",
         swfPath: "flash/compiled/FontList.swf",
         detectScreenOrientation: true,
         sortPluginsFor: [/palemoon/i],
         userDefinedFonts: [],
-        timeout: 2000,
+        timeout: 10000,
         excludeDoNotTrack: false,
+        isIntercept: false,
+        rule:{
+          webgl: 7000,
+          userAgent: 120
+        }
       };
       this.options = this.extend(options, defaultOptions);
-      this.lengthManager = {
-        userAgent: 120,
-        webgl: 10000
-      }
-      this.lengthManagerResult = [];
+      this.meta = [];
       this.nativeForEach = Array.prototype.forEach;
       this.nativeMap = Array.prototype.map;
       this.url = options.url;
@@ -126,9 +126,8 @@ if (typeof Object.assign != "function") {
       this.serialNumber1 = options.serialNumber1 || "";
       this.serialNumber2 = options.serialNumber2 || "";
       this.serialNumber3 = options.serialNumber3 || "";
-      this.buriedPrintData = options.buriedPrintData;
-      this.version = options.version;
-      this.applyId = options.applyId;
+      this.version = options.version || "";
+      this.applyId = options.applyId || "";
       this.accelero = [null, null, null];
       this.gyroscope = [null, null, null];
       this.idMark = null;
@@ -162,9 +161,9 @@ if (typeof Object.assign != "function") {
         window.mozIndexedDB ||
         window.msIndexedDB;
       this.isPrivate = false;
-      this.logCode = this.uuid_product();
-      this.startTime = null;
-      this.uuid = null;
+      this.startTime = false;
+      this.uuid = false;
+      this.storageCode = "";
       this.init();
     }
     isPrivateMode(done) {
@@ -241,22 +240,29 @@ if (typeof Object.assign != "function") {
         window.removeEventListener("devicemotion", motionHandlerEvent);
       }, 1024);
     }
-    preGet(done) {
+    getTraceId(done) {
       let that = this;
-      this.isPrivateMode(function(isPrivate) {
-        that.isPrivate = isPrivate
-        that.openDB(that.myDB_time, 1);
-        that.openDB(that.myDB_uuid, 1);
-        const DbInterval = setInterval(()=>{
-          if(that.uuid && that.startTime) {
-            that.check('myDB_time', isPrivate);
-            that.check('myDB_uuid', isPrivate);
-            that.getMark();
-            that.get(done);
-            clearInterval(DbInterval);
-          }
-        }, 50)
+      this.isPrivateMode((isPrivate)=>{
+        that.isPrivate = isPrivate;
+        if(!that.isPrivate) {
+          that.openDB(that.myDB_time, 1);
+          that.openDB(that.myDB_uuid, 1);
+          const DbInterval = setInterval(() => {
+            if (that.uuid && that.startTime) {
+              that.seqProcess(isPrivate, done);
+              clearInterval(DbInterval);
+            }
+          }, 50)
+        } else {
+          that.seqProcess(isPrivate, done);
+        }
       })
+    }
+    seqProcess(isPrivate, done) {
+      this.check('myDB_time', isPrivate);
+      this.check('myDB_uuid', isPrivate);
+      this.setMark();
+      this.get(done);
     }
     get(done) {
       var that = this;
@@ -305,17 +311,14 @@ if (typeof Object.assign != "function") {
             newKeys = that.additionalItems(newKeys, that.isPrivate);
             newKeys = that.getWebglObj(newKeys);
             newKeys = that.getBrowserInfo(newKeys);
-            newKeys = that.wordLengthManager(newKeys);
+            newKeys = that.getVerification(newKeys);
+            newKeys = that.handleValue(newKeys);
             const pushData = {
               data: newKeys.data,
               systemNumber: that.systemNumber,
-              mark: that.mark,
-              logCode: that.logCode,
-              lengthManager: that.lengthManagerResult,
-              localData: that.getLocalData()
+              meta: that.meta,
             }
-            console.log(pushData)
-            var str = JSON.stringify(pushData);
+            let str = JSON.stringify(pushData);
             return that.ajax(done, str, that.url);
         });
       });
@@ -326,6 +329,28 @@ if (typeof Object.assign != "function") {
       } else {
         return setTimeout(fn, 1);
       }
+    }
+    getVerification(keys) {
+      // this.traceId = this.uuid_product();
+      keys = this.arrAddItems(
+        keys,
+        "前端存储对比标识",
+        this.mark,
+        "safeMark"
+      );
+      keys = this.arrAddItems(
+        keys,
+        "cookie, localStorage, indexedDB综合储存值, 清除前端储存之后就会改变",
+        this.storageCode,
+        "storageCode"
+      );
+      // keys = this.arrAddItems(
+      //   keys,
+      //   "查询码",
+      //   "H5|" + this.traceId,
+      //   "traceId"
+      // );
+      return keys;
     }
     checkVideo() {
       if (document.createElement("video").canPlayType) {
@@ -408,7 +433,7 @@ if (typeof Object.assign != "function") {
       keys = this.arrAddItems(
         keys,
         "浏览器的平台和版本信息",
-        navigator.appVersion || "",
+        navigator.appVersion.replace(/(\swebCore=\w*)/,"") || "",
         "browserVer"
       );
       keys = this.arrAddItems(
@@ -518,6 +543,9 @@ if (typeof Object.assign != "function") {
       keys = this.arrAddItems(keys, "系列号1", this.serNum1, "serNum1");
       keys = this.arrAddItems(keys, "系列号2", this.serNum2, "serNum2");
       keys = this.arrAddItems(keys, "系列号3", this.serNum3, "serNum3");
+      keys = this.arrAddItems(keys, "系列号1-1", this.serialNumber1, "serialNumber1");
+      keys = this.arrAddItems(keys, "系列号2-1", this.serialNumber2, "serialNumber2");
+      keys = this.arrAddItems(keys, "系列号3-1", this.serialNumber3, "serialNumber3");
       keys = this.arrAddItems(keys, "业务系统", this.version, "version");
       keys = this.arrAddItems(keys, "业务申请ID", this.applyId, "applyId");
       keys = this.arrAddItems(
@@ -574,7 +602,7 @@ if (typeof Object.assign != "function") {
       if (!this.options.excludeUserAgent) {
         keys.addPreprocessedComponent({
           key: "userAgent",
-          value: this.getUserAgent(),
+          value: this.getUserAgent().replace(/(\swebCore=\w*)/,""),
           desc: "用户代理"
         });
       }
@@ -806,8 +834,8 @@ if (typeof Object.assign != "function") {
         this.isWebGlSupported()
       ) {
         keys.addPreprocessedComponent({
-          key: "webglVendor",
-          desc: "Wbgl供应商信息",
+          key: "webglVendorAndRenderer",
+          desc: "Wbgl供应商和渲染器信息",
           value: this.getWebglVendorAndRenderer()
         });
       }
@@ -2276,7 +2304,7 @@ if (typeof Object.assign != "function") {
         keys,
         "模板bit",
         gl.getParameter(gl.STENCIL_BITS) || "",
-        "wwebglStencilBits"
+        "webglStencilBits"
       );
       keys = this.arrAddItems(
         keys,
@@ -2969,8 +2997,7 @@ if (typeof Object.assign != "function") {
       return results;
     }
     ajax(done, jsonStr, url) {
-      let that = this
-      let timeout = this.options.timeout;
+      let that = this;
       var xhr;
       if (window.XMLHttpRequest) {
         xhr = new XMLHttpRequest();
@@ -2978,47 +3005,56 @@ if (typeof Object.assign != "function") {
         xhr = new ActiveXObject('Microsoft.XMLHTTP');
       }
       xhr.open("POST", url, true);
+      xhr.timeout = this.options.timeout;
       xhr.setRequestHeader("Content-type", "application/json");
       xhr.send(jsonStr);
-      let requestTimeout = setTimeout(function(){
-        xhr.abort();
-        let seriaObj = {
-          serialNum: null,
-          errMsg: 'request timeout',
-          errCode: 638
+      xhr.ontimeout = function(){
+          let outResult = {
+          traceId: "",
+          errCode: 1003,
+          success:false
         };
-       return done(seriaObj);
-      }, timeout);
+       return done(outResult);
+      }
+      xhr.onerror = function(e){
+        let outResult;  
+        if(xhr.status == 302) {
+          outResult = {
+            traceId: "",
+            errCode: 1004,
+            success:false
+          };
+        } else {
+          outResult = {
+            traceId: "",
+            errCode: 1001,
+            success:false
+          };
+        }
+        return done(outResult);
+      }
       xhr.onreadystatechange = function() {
         if (xhr.readyState == 4) {
-          window.clearTimeout(requestTimeout);
           if (xhr.status == 200) {
             let res = JSON.parse(xhr.responseText);
-            let customErrcode = res.success ? 1 : 2;
-            let serialNum = res.serialNum;
-            if (!that.getLocalData()) {
-              that.savaLocalData(serialNum);
+            if (!res.success) {
+              res.traceId = ''
             }
-            let seriaObj = {
-              serialNum: serialNum,
-              errMsg: 'request is success',
-              errCode: res.errCode || customErrcode,
-            };
-            return done(seriaObj);
-          } else if (xhr.status !== 200 && xhr.status !== 0) {
-            let seriaObj = {
-              serialNum: null,
-              errMsg: xhr.statusText + "(" + xhr.status + ")",
-              errCode: xhr.status
-            };
-            return done(seriaObj);
+            return done(res);
+          } else if (xhr.status !==200 && xhr.status !== 0 ) {
+              let outResult = {
+                traceId: "",
+                errCode: 1002,
+                success:false
+              };
+              return done(outResult);
           }
         }
       };
     }
     setCookie(cname, cvalue, exday) {
       let d = new Date();
-      let exdays = exday || 66666
+      let exdays = exday || 66666;
       d.setTime(d.getTime() + exdays * 24 * 60 * 60 * 1000);
       let expires = "expires=" + d.toGMTString();
       document.cookie = cname + "=" + cvalue + "; " + expires;
@@ -3058,44 +3094,46 @@ if (typeof Object.assign != "function") {
       };
       request.onsuccess = function(e){
         dbObj.db = e.target.result;
-        that.getDataByKey(dbObj.db,dbObj.ojstore.name,version,dbObj)
-          console.log('成功建立并打开数据库:'+dbObj.ojstore.name+' version'+dbversion);
-          let name = dbObj.name
-          that[name] = true
+        let name = dbObj.name;
+        that.getDataByKey(dbObj.db, dbObj.ojstore.name, version, dbObj, name);
+        //console.log('成功建立并打开数据库:'+dbObj.ojstore.name+' version'+dbversion);
       };
       request.onupgradeneeded=function(e){
-          var db=e.target.result,transaction= e.target.transaction,store;
+          var db = e.target.result,transaction= e.target.transaction,store;
           if(!db.objectStoreNames.contains(dbObj.ojstore.name)){
-              //没有该对象空间时创建该对象空间
-              store = db.createObjectStore(dbObj.ojstore.name,{keyPath:dbObj.ojstore.keypath});
-              console.log('成功建立对象存储空间：'+dbObj.ojstore.name);
+            //没有该对象空间时创建该对象空间
+            store = db.createObjectStore(dbObj.ojstore.name,{keyPath:dbObj.ojstore.keypath});
+            console.log('create success')
+            // console.log('成功建立对象存储空间：'+dbObj.ojstore.name);
           }
       };
     }
     // 新增数据
     addData(db, storename, data){
         //添加数据，重复添加会报错
-      var store = db.transaction(storename,'readwrite').objectStore(storename);
-      var request;
+      let store = db.transaction(storename,'readwrite').objectStore(storename);
+      let request;
       request = store.add(data);
       request.onerror = function(){
-        console.error('add添加数据库中已有该数据')
+        console.error('add fail');
       };
       request.onsuccess = function(){
-        console.log('add添加数据已存入数据库')
+        console.log('add success');
       };
     }
     // 获取数据库存储数据
-    getDataByKey(db, storename, key, dbObj){
+    getDataByKey(db, storename, key, dbObj, name){
         //根据存储空间的键找到对应数据
-      var store = db.transaction(storename,'readwrite').objectStore(storename);
-      var request = store.get(key);
+      let that = this;
+      let store = db.transaction(storename,'readwrite').objectStore(storename);
+      let request = store.get(key);
       request.onerror = function(){
         console.error('getDataByKey error');
       };
       request.onsuccess = function(e){
         dbObj.result = e.target.result;
-        console.log('查找数据成功')
+        that[name] = true;
+        console.log('查找数据成功');
       };
     }
     clearData(db, storename){
@@ -3104,45 +3142,53 @@ if (typeof Object.assign != "function") {
       store.clear();
       console.log('已删除存储空间'+storename+'全部记录');
     }
-    check(dbObj,privacy) {
+    check(dbObj, privacy) {
       let result1;
       let name = this[dbObj].name;
       let mark = this[dbObj].markName;
-      if(this[dbObj].result) {
+      if (this[dbObj].result) {
         result1 = this[dbObj].result[name];
       }
       let result2 = this.getCookie(name);
       let result3 = this.getLocalStorage(name);
-      console.log(result1,result2,result3,(result1 && result1 == result2 && result2 == result3))
-      if(result1 && result1 == result2 && result2 == result3 || (privacy && result2 == result3)) {
-        console.log('已经存储过 且相同'+ dbObj)
-        this[mark] = 3
-      } else if(result1 === undefined && result2 === "" && result3 === null || (privacy && result2 === "" && result3 === null) ) {
-        console.log('没有存储过','需要存储'+ dbObj)
-        this[mark] = 1
-      }else {
-        console.log('有个别被动过'+ dbObj)
-        this[mark] = 2
+      if(name == 'uuid') {
+        this.storageCode = result3 || result2 || result1
+      }
+      if (result1 && result1 == result2 && result2 == result3 || (privacy && result2 == result3)) {
+        console.log('Storage consistency');
+        this[mark] = 3;
+      } else if (result1 === undefined && result2 === "" && result3 === null || (privacy && result2 === "" && result3 === null) ) {
+        console.log('Storage empty');
+        this[mark] = 1;
+      } else {
+        console.log('Storage tampered');
+        this[mark] = 2;
       }
     }
     set(dbObj, name) {
-      var db = this[dbObj].db
-      var storeName = this[dbObj].ojstore.name;
-      let data = name == 'startTime' ? new Date().getTime() : this.uuid_product();
-      this.setCookie(name, data)
+      let db = this[dbObj].db;
+      let storeName = this[dbObj].ojstore.name;
+      let data;
+      if (name == 'startTime') {
+        data = new Date().getTime();
+      } else {
+        data = this.uuid_product();
+        this.storageCode = data;
+      }
+      this.setCookie(name, data);
       if(db) {
         let addData = {};
         addData['id'] = 1;
         addData[name] = data;
-        this.clearData(db, storeName)
-        this.addData(db, storeName, addData)
+        this.clearData(db, storeName);
+        this.addData(db, storeName, addData);
       }
       this.setLocalStorage(name,data)
     }
-    getMark() {
+    setMark() {
       if (this.idMark === 3 && this.timeMark === 3) {
         this.mark = 3;
-      }else if(this.idMark === 1 && this.timeMark === 1) {
+      } else if (this.idMark === 1 && this.timeMark === 1) {
         this.mark = 1;
         this.reset();
       } else {
@@ -3150,35 +3196,33 @@ if (typeof Object.assign != "function") {
       }
     }
     reset() {
-      this.set('myDB_time', 'startTime')
-      this.set('myDB_uuid', 'uuid')
+      this.set('myDB_time', 'startTime');
+      this.set('myDB_uuid', 'uuid');
     }
-    savaLocalData(value) {
-      this.setLocalStorage('localData', value)
-    }
-    getLocalData() {
-      return this.getLocalStorage('localData') || ''
-    }
-    wordLengthManager(keys) {
-      if (this.options.lengthManager && typeof(this.options.lengthManager) == 'object' ) {
-        this.lengthManager = this.extend(this.options.lengthManager, this.lengthManager)
+    handleValue(keys) {
+      let { rule, isIntercept } = this.options;
+      if (!rule || typeof (rule) !== 'object' ) {
+        return keys;
       }
-      let data = keys.data
-      let length = data.length
-      for (let key in this.lengthManager) {
+      let data = keys.data;
+      let length = data.length;
+      for (let key in rule) {
         for (let i = 0;i < length;i++) {
-          if (data[i].key === key && data[i].value.length > this.lengthManager[key]) {
-            this.lengthManagerResult.push({
+          if (data[i].key === key) {
+            this.meta.push({
               key: data[i].key,
-              desc: data[i].key + '\xa0' +'is so long',
-              legnth: data[i].value.length
+              desc: data[i].key + '长度',
+              length: data[i].value.length,
+              customLength: rule[key]
             })
-            data[i].value = data[i].value.substr(0, this.lengthManager[key])
+            if (isIntercept && data[i].value.length > rule[key]) {
+              data[i].value = data[i].value.substr(0, rule[key]);
+            }
             break;
           }
         }
       }
-      return keys
+      return keys;
     }
   }
   return BxH5DevicePrint;

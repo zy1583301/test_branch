@@ -1,6 +1,6 @@
 <template>
     <div>
-        <svg width="1000" height="1500">
+        <svg width="1000" height="700">
             <g />
         </svg>
     </div>

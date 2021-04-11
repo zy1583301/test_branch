@@ -1,5 +1,5 @@
 <template>
-  <div class="view">
+  <div class="content">
     <div class="header">
       <div  class="model_menu">
       <button @click="changeModel">收缩</button>
@@ -22,18 +22,17 @@
 
 <script>
 import appView from './appview'
-
 import { mapMutations, mapState } from 'vuex'
 export default {
   data(){
     return {
-      isRouterAlive:true,
-      tabs:[]
+      isRouterAlive: true,
+      tabs: []
     }
   },
   provide (){
      return {
-       reload:this.reload
+       reload: this.reload
      }
   },
   watch: {
@@ -51,8 +50,8 @@ export default {
   },
   computed: {
     ...mapState({
-      currentPath1: state => state.currentPath1,
-      currentPath2: state => state.currentPath2,
+      currentPath1: state => state.frame.currentPath1,
+      currentPath2: state => state.frame.currentPath2,
     })
   },
   methods: {
@@ -63,7 +62,6 @@ export default {
       this.changeOpenSide()
     },
     reload (){
-      // console.log('relo')
        this.isRouterAlive = false
        this.$nextTick(function(){
           this.isRouterAlive = true
@@ -74,19 +72,16 @@ export default {
         this.$message.warning('首页不能关闭');
         return 
       }
-      // console.log(this,'this')
-      // this.$route.meta.reload=true
       this.tabs[index].meta.reload=true
       this.go(this.tabs[index])
       this.tabs.splice(index,1)
       let length = this.tabs.length
-      if(this.tabs[length-1].name!==this.$route.name) {
+      if(this.tabs[length-1].name !== this.$route.name) {
         this.$router.push(this.tabs[length-1].fullPath)
       }
-
     },
     go(tab) {
-      if(this.$route.name==tab.name ) {
+      if(this.$route.name == tab.name ) {
         return
       }
       this.$router.push(tab.fullPath)
@@ -109,16 +104,20 @@ export default {
       if(flag) {
         this.tabs.push(this.$route)
       }
-    // console.log(this.$vnode)
   }
 
 }
 </script>
 
 <style lang="less">
-  .view {
+  .content {
     flex:1;
     height:100%;
+    position: relative;
+    overflow: hidden;
+    /* display: flex;
+    flex-direction: column; */
+    background: white;
     .header{
       width: 100%;
       padding: 10px 0;
@@ -133,6 +132,9 @@ export default {
     }
     .app_view {
       width: 100%;
+      flex: 1;
+      overflow-y: auto;
+      //height: calc(100vh - 67px);
     }
     .tabs{
       display: flex;
